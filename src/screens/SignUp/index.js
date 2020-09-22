@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-community/async-storage';
 
 import BarberLogo from '../../assets/barber.svg';
 import PersonIcon from '../../assets/person.svg';
@@ -7,6 +8,8 @@ import EmailIcon from '../../assets/email.svg';
 import LockIcon from '../../assets/lock.svg';
 
 import SignInput from '../../components/SignInput';
+
+import { UserContext } from '../../contexts/UserContext';
 
 import {
   Container,
@@ -18,14 +21,40 @@ import {
   SignMessageButtonTextBold,
 } from './styles';
 
+import Api from '../../Api';
+
 const SignIn = () => {
+  const { dispatch: userDispatch } = useContext(UserContext);
+
   const navigation = useNavigation();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignClick = () => {};
+  const handleSignClick = async () => {
+    if (name !== '' && email !== '' && password !== '') {
+      const response = await Api.signUp(name, email, password);
+      if (response.token) {
+        await AsyncStorage.setItem('@devbarber:token', response.token);
+
+        userDispatch({
+          type: 'setAvatar',
+          payload: {
+            avatar: response.data.avatar,
+          },
+        });
+
+        navigation.reset({
+          routes: [{ name: 'MainTab' }],
+        });
+      } else {
+        alert('Erro: ' + response.error);
+      }
+    } else {
+      alert('Preencha os campos!');
+    }
+  };
 
   const handleMessageButtonClick = () => {
     navigation.reset({

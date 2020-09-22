@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-community/async-storage';
+
 import BarberLogo from '../../assets/barber.svg';
 import EmailIcon from '../../assets/email.svg';
 import LockIcon from '../../assets/lock.svg';
 
 import SignInput from '../../components/SignInput';
+
+import { UserContext } from '../../contexts/UserContext';
 
 import {
   Container,
@@ -16,13 +20,38 @@ import {
   SignMessageButtonTextBold,
 } from './styles';
 
+import Api from '../../Api';
+
 const SignIn = () => {
+  const { dispatch: userDispatch } = useContext(UserContext);
   const navigation = useNavigation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignClick = () => {};
+  const handleSignClick = async () => {
+    if (email !== '' && password !== '') {
+      let response = await Api.signIn(email, password);
+      if (response.token) {
+        await AsyncStorage.setItem('@devbarber:token', response.token);
+
+        userDispatch({
+          type: 'setAvatar',
+          payload: {
+            avatar: response.data.avatar,
+          },
+        });
+
+        navigation.reset({
+          routes: [{ name: 'MainTab' }],
+        });
+      } else {
+        alert('E-mail e/ou senha errados!');
+      }
+    } else {
+      alert('Preencha os campos!');
+    }
+  };
 
   const handleMessageButtonClick = () => {
     navigation.reset({
